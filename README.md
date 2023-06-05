@@ -61,13 +61,7 @@ docker run -p 3000:3000 videoapi:latest
 
 - URL: `POST localhost:3000/video`
 - Description: Uploads a video file to Supabase storage.
-- Request body: `file` param Form-data with file field containing the video file.
-- Sample request body
-```
-{
-"videoId1":"dcfc295467ea4533d78de81339b07beb"
-"videoId2":"dcfc295467ea7833d78de81339b07beb"
-}
+- Request body: `file` param Form-data with file field containing the video file.git
 ```
 - Response: JSON response indicating the success or failure of the upload.
 - Sample response :
