@@ -79,8 +79,7 @@ docker run -p 3000:3000 videoapi:latest
 
 - URL: `POST: localhost:3000/video/merge`
 - Description: Merge two videos from the supabase.
-- Request body: Request body parameters with two video ids. {viodeoId1:'aaaaadd111',videoId2:'aaqqqq1111'}.On postman client,please
-  make sure that the  request body type is application/json.
+- Request body: Request body parameters with two video ids. On postman client,please make sure that the  request body type is application/json.
 - Sample request
 ```
 {
