@@ -1,10 +1,10 @@
 # video-apis-assessment
 ### Technical Assessment Montra ###
 This application is video manipulation service built using Node.js, Express.js, Supabase, and FFmpeg. The application mainly four APIs:
-* Upload API - API that is can be used upload a video file to Supabase storage.
-* Metadata API -  API returns the metadata of the video of that is present in Supabase storage.
-* Merge API - API that can be used to merge two corresponding videos from Supabase.
-* Download API - API that provides a link to download the merged video.
+* Upload API - used upload a video file to Supabase storage.
+* Metadata API - returns the metadata of the video of that is present in Supabase storage.
+* Merge API - used to merge two corresponding videos from Supabase.
+* Download API -  provides a link to download the merged video.
 
 ## Project Structure
 ```
@@ -20,6 +20,8 @@ This application is video manipulation service built using Node.js, Express.js, 
 ├── converted (the folder from which videos are uploaded to supabase storage)
 ├── downloaded (the folder where the videos from supabase are downloaded and later used to extract metadata)
 ├── .env (environment variables)
+├── common.constant.ts (constant related to the application)
+├── utils.ts ( utils related to the application)
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -39,15 +41,19 @@ This application is video manipulation service built using Node.js, Express.js, 
 ## Installation and Setup
 Note : Please have a minimum version of node v16.16.0, docker installed
 * Start by cloning the repo :
-* Set and up run docker with following commands to install the required dependencies and setup.
-  ``` docker build -t test .``` and 
-  ``` docker run -p 3000:3000 -v $(pwd):/usr/src/app test:latest ```
-* Please create a supabase account and create new project. From the project settings->API-> Get your Project URL and Project Key. This key and url needs to be  
-  entered in your environment variables.
+* Please create a supabase account and create new project. From the project settings->API-> Get your Project URL and Project Key. This key and url needs to be entered in your environment variables.
 * Please a create a storage bucket named `videos` and set it to public.
-* Please create `.env` and provide the necessary environment variables (e.g., Supabase URL, Supabase key, PORT).
-* Please create two folders named `converted` and `downloaded` on the top-level directory.
-* Start the server by giving `npm run dev`.
+* Please create `.env` and provide the necessary environment variables (e.g., Supabase URL, Supabase key, PORT). Here is sample .env file.
+```
+BASE_URL="YOUR_SUPABASE_URL"
+BASE_KEY="YOUR_SUPABASE_KEY"
+MAX_FILE_LIMIT=5242880
+```
+* Set up and run docker with following commands:
+``` 
+docker build -t test .
+docker run -p 3000:3000 -v $(pwd):/usr/src/app test:latest
+```
 
 ## API Documentation
 
@@ -67,10 +73,10 @@ Note : Please have a minimum version of node v16.16.0, docker installed
 - Sample response :
 ```
 {
-    "mergeVideoResponse": {
+    "uploadResponse": {
         "success": true,
         "data": {
-            "downloadlink": "videos/./merged/dcfc295467ea7833d78de81339b07beb.mp4"
+            "path": "videos/./converted/dcfc295467ea7833d78de81339b07beb.mp4"
         }
     }
 }
@@ -81,9 +87,24 @@ Note : Please have a minimum version of node v16.16.0, docker installed
 - URL: `POST: localhost:3000/video/merge`
 - Description: Merge two videos from the supabase.
 - Request body: Request body parameters with two video ids. {viodeoId1:'aaaaadd111',videoId2:'aaqqqq1111'}
+- Sample request
+```
+{
+"videoId1":"dcfc295467ea7833d78de81339b07beb",
+"videoId2":"822c647bb84b607b40437c1fc35c4785"
+}
+```
 - Response: JSON response indicating the success or failure of the merge.
 - Sample response :
 ```
+{
+    "mergeVideoResponse": {
+        "success": true,
+        "data": {
+            "download_link": "videos/./merged/dcfc295467ea7833d78de81339b07beb.mp4"
+        }
+    }
+}
 ```
 
 ### Video Metadata API ###
@@ -116,7 +137,7 @@ A postman client is used to test the APIs.
   name as `file` and in `value`, select a video file and send the request.
 
 * Video metadata API - The upload API can be tested by using the following URL : `localhost:3000/video/metadata/:videoId`. The videoId should be on the URL as a 
-  parameter. The `videoId` can be found on the supabase storage. The videoId is nothing butunique name of the video that is stored in the supabase.
+  parameter. The `videoId` can be found on the supabase storage. The videoId is nothing but the unique name of the video that is stored in the supabase.
 
 * Merge Video API - The merge API can be tested using the following URL :
 
