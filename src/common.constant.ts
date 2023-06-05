@@ -1,0 +1,7 @@
+const CONSTANTS = Object.freeze({
+  DEFAULT_OUTPUT_TYPE: "mp4",
+  DEFAULT_ENCODER: "libx264",
+  DEFAULT_FILE_LIMIT: 52428800
+})
+
+export default CONSTANTS;

@@ -1,173 +1,224 @@
 import ffmpeg from "fluent-ffmpeg";
 import fs from "fs";
-import { createClient } from "@supabase/supabase-js";
+import { v4 as uuidv4 } from "uuid";
+import { SupabaseClient, createClient } from "@supabase/supabase-js";
 import "dotenv/config";
 
+import { MetaData } from "../model/MetaData";
+import { cleanUp, writeFileToLocal } from "../utils";
+import CONSTANTS from "../common.constant";
+
 export class VideoService {
-  supabase: any;
+  supabase: SupabaseClient<any, "public", any>;
   assetsBaseUrl = "./assets";
   convertedBaseUrl = "./converted";
   downloadedBaseUrl = "./downloaded";
   mergedBaseUrl = "./merged";
+  processedBaseUrl = "./processed";
 
   constructor() {
-    const supabaseKey = process.env.BASE_KEY;
-    const supabaseUrl = process.env.BASE_URL;
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabase = createClient(process.env.BASE_URL, process.env.BASE_KEY);
   }
 
-  addWaterMark = async (filePath: any) => {
-    const tempFileLocation = `${this.convertedBaseUrl}/${filePath}.mp4`
-    new Promise((resolve, reject) => {
+  addWaterMark = async (filePath: string): Promise<string> => {
+    const watermarkFilePath = `${this.mergedBaseUrl}/${uuidv4()}.${
+      CONSTANTS.DEFAULT_OUTPUT_TYPE
+    }`;
+    return new Promise((resolve, reject) => {
       try {
         ffmpeg()
-          .input(tempFileLocation)
+          .input(filePath)
           .input(`${this.assetsBaseUrl}/watermark.png`)
-          .videoCodec("libx264")
+          .videoCodec(CONSTANTS.DEFAULT_ENCODER)
           .outputOptions("-pix_fmt yuv420p")
           .complexFilter([
             "[0:v]scale=1024:-1[bg];[bg][1:v]overlay=W-w-10:H-h-10",
           ])
-          .saveToFile(`${this.mergedBaseUrl}/${filePath}.mp4`)
-          .on("end", () => resolve("success"))
+          .saveToFile(watermarkFilePath)
+          .on("end", () => resolve(watermarkFilePath))
           .on("error", (error) => reject(error));
       } catch (e) {
         reject(e);
       } finally {
-        this.cleanUp(tempFileLocation);
+        cleanUp(filePath);
       }
     });
   };
 
-  uploadVideoToSupabase = async (file) => {
-    const tempFileLocation = `${this.convertedBaseUrl}/${file.filename}.mp4`
+  convertToFormat = (
+    filePath: string,
+    tempFileLocation: string,
+    format = CONSTANTS.DEFAULT_OUTPUT_TYPE
+  ): Promise<string> => {
+    return new Promise<any>((resolve, reject) => {
+      ffmpeg(filePath)
+        .toFormat(format)
+        .on("error", (error) => reject(error))
+        .saveToFile(tempFileLocation)
+        .on("end", () => resolve("success"));
+    });
+  };
+
+  uploadAndFormatVideo = async (file: Express.Multer.File) => {
+    const tempFileLocation = `${this.convertedBaseUrl}/${file.filename}.${CONSTANTS.DEFAULT_OUTPUT_TYPE}`;
+    await this.convertToFormat(file.path, tempFileLocation);
+    return await this.uploadVideoToSupabase(tempFileLocation);
+  };
+
+  uploadVideoToSupabase = async (filePath: string) => {
     try {
-      const convertedFile = await mp4Conversion(file);
       const { data, error } = await this.supabase.storage
         .from("videos")
-        .upload(`videos/${convertedFile}`, fs.createReadStream(convertedFile), {
+        .upload(`videos/${filePath}`, fs.createReadStream(filePath), {
           upsert: true,
         });
-      return { success: true, data };
       if (error) {
         throw error;
       }
-      else {
-        return { status: "success"}
-      }
+      return { success: true, link: filePath };
     } catch (error) {
       console.error(error);
-      throw new Error(error.message);
+      throw new Error(error);
     } finally {
-      this.cleanUp(tempFileLocation);
-    }
-
-    async function mp4Conversion(fileData): Promise<any> {
-      return new Promise<any>((resolve, reject) => {
-        ffmpeg(file.path)
-          .toFormat("mp4")
-          .on("error", (error) => reject(error))
-          .saveToFile(tempFileLocation)
-          .on("end", () => resolve(tempFileLocation));
-      });
+      cleanUp(filePath);
     }
   };
 
-  fetchVideoDataFromSupabase = async (videoId: any) => {
+  downloadVideoAndSaveFromSupabase = async (
+    videoId: string
+  ): Promise<string> => {
     try {
+      const filePath = `${this.downloadedBaseUrl}/${videoId}.${CONSTANTS.DEFAULT_OUTPUT_TYPE}`;
       const { data, error } = await this.supabase.storage
         .from("videos")
-        .download(`videos/converted/${videoId}.mp4`);
+        .download(
+          `videos/${this.convertedBaseUrl}/${videoId}.${CONSTANTS.DEFAULT_OUTPUT_TYPE}`
+        );
       if (error) {
         throw error;
-      } else {
-        await downloadToLocal(data, videoId);
-        const metadata = await extractMetadata(videoId);
-        const formattedMetadata = filterMetaDataResponse(metadata);
-        return { success: true, formattedMetadata };
       }
+      await writeFileToLocal(data, filePath);
+      return filePath;
     } catch (error) {
       console.error(error);
-      throw new Error(error.message);
-    }
-
-    async function downloadToLocal(fileData, videoId): Promise<any> {
-      const buf = Buffer.from(await fileData.arrayBuffer()); // decode
-      fs.writeFileSync(`./downloaded/${videoId}.mp4`, buf);
-    }
-
-    async function extractMetadata(videoId): Promise<any> {
-      return new Promise<any>((resolve, reject) => {
-        ffmpeg.ffprobe(`./downloaded/${videoId}.mp4`, function (err, metadata) {
-          if (err) {
-            reject(err);
-          }
-          resolve(metadata);
-        });
-      });
-    }
-
-    function filterMetaDataResponse(response: any): any {
-      const { codec_name, width, height, duration, bit_rate } =
-        response.streams[0];
-      const { format_name } = response.format;
-      return {
-        codecName: codec_name,
-        resolution: `${width}x${height}`,
-        duration: duration,
-        bitRate: bit_rate,
-        formatName: format_name,
-      };
+      throw new Error(error);
     }
   };
-  mergeVideoService = async (videoId1: string, videoId2: string) => {
 
+  extractMetadata = (filePath: string): Promise<MetaData> => {
+    return new Promise<any>((resolve, reject) => {
+      ffmpeg.ffprobe(filePath, (err, metadata) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(this.filterMetaDataResponse(metadata));
+      });
+    });
+  };
+
+  filterMetaDataResponse = (response: ffmpeg.FfprobeData): MetaData => {
+    const { codec_name, width, height, duration, bit_rate } =
+      response.streams[0];
+    const { format_name } = response.format;
+    return {
+      codecName: codec_name,
+      resolution: `${width}x${height}`,
+      duration: duration,
+      bitRate: bit_rate,
+      formatName: format_name,
+    };
+  };
+
+  fetchVideoMetaData = async (videoId: string) => {
+    const tempFilePath = await this.downloadVideoAndSaveFromSupabase(videoId);
+
+    const metadata = await this.extractMetadata(tempFilePath);
+    return { success: true, metadata };
+  };
+
+  downloadMergedVideo = async (videoId: string): Promise<string> => {
     try {
-      await Promise.allSettled([this.fetchVideoDataFromSupabase(videoId1),
-       this.fetchVideoDataFromSupabase(videoId2)]);
-
-      await Promise.allSettled([this.videoTranscoding(videoId1), this.videoTranscoding(videoId2)]);
-
-      ffmpeg().input(`./temp/${videoId1}.mp4`)
-      // .withDuration(30)
-      .input(`./temp/${videoId2}.mp4`)
-      // .withDuration(30)
-      .mergeToFile('./merged/test.mp4','./temp')
-      .on('error', function(err) {
-        // console.error('An error occurred on merge: ', err); //throw error
-        throw err
-      })
-      .on('end', function() {
-        console.log('Merging finished !');
-      })
-    } catch (error) {
-        console.error("Error")
-    }
-  }
-
-     videoTranscoding = async (videoId): Promise<any> => {
-      return new Promise((resolve, reject) => {
-          ffmpeg().input(`${this.downloadedBaseUrl}/${videoId}.mp4`)
-          .videoCodec('libx264')
-          .noAudio()
-          .outputOptions('-vf', 'scale=1280:720')
-          .outputOptions('-r', '30')
-          .saveToFile(`./temp/${videoId}.mp4`).on('error', function(err) {
-            console.error('An error occurred on convert: ', err);
-            reject(err)
-          })
-          .on('end', function() {
-            console.log('convert finished !');
-            resolve('success')
-          });
-        });
-    }
-
-    cleanUp(pathToFile) {
-      try {
-        fs.unlinkSync(pathToFile);
-      } catch (err) {
-        console.log("clean up failed", err);
+      const filePath = `${this.downloadedBaseUrl}/${videoId}.${CONSTANTS.DEFAULT_OUTPUT_TYPE}`;
+      const { data, error } = await this.supabase.storage
+        .from("videos")
+        .download(
+          `videos/${this.mergedBaseUrl}/${videoId}.${CONSTANTS.DEFAULT_OUTPUT_TYPE}`
+        );
+      if (error) {
+        throw error;
       }
+      await writeFileToLocal(data, filePath);
+      return filePath;
+    } catch (error) {
+      console.error(error);
+      throw new Error(error);
     }
+  };
+
+  videoTranscoding = async (videoId: string): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      ffmpeg()
+        .input(
+          `${this.downloadedBaseUrl}/${videoId}.${CONSTANTS.DEFAULT_OUTPUT_TYPE}`
+        )
+        .videoCodec(CONSTANTS.DEFAULT_ENCODER)
+        .noAudio()
+        .size("1280x720")
+        .withFps(24)
+        .withDuration(30)
+        .saveToFile(
+          `${this.processedBaseUrl}/${videoId}.${CONSTANTS.DEFAULT_OUTPUT_TYPE}`
+        )
+        .on("error", function (err) {
+          console.error("An error occurred on convert: ", err);
+          reject(err);
+        })
+        .on("end", function () {
+          console.log("convert finished !");
+          resolve("success");
+        });
+    });
+  };
+
+  mergeVideoService = async (videoId1: string, videoId2: string) => {
+    try {
+      await Promise.allSettled([
+        this.downloadVideoAndSaveFromSupabase(videoId1),
+        this.downloadVideoAndSaveFromSupabase(videoId2),
+      ]);
+
+      await Promise.allSettled([
+        this.videoTranscoding(videoId1),
+        this.videoTranscoding(videoId2),
+      ]);
+
+      const mergedVideoFilePath = `${this.mergedBaseUrl}/${uuidv4()}.${
+        CONSTANTS.DEFAULT_OUTPUT_TYPE
+      }`;
+
+      await new Promise((resolve, reject) => {
+        ffmpeg()
+          .input(
+            `${this.processedBaseUrl}/${videoId1}.${CONSTANTS.DEFAULT_OUTPUT_TYPE}`
+          )
+          .input(
+            `${this.processedBaseUrl}/${videoId2}.${CONSTANTS.DEFAULT_OUTPUT_TYPE}`
+          )
+          .mergeToFile(mergedVideoFilePath, "./temp")
+          .on("error", (err) => {
+            reject(err);
+          })
+          .on("end", () => {
+            console.log("Merging finished!");
+            resolve("success");
+          });
+      });
+
+      const watermarkFilePath = await this.addWaterMark(mergedVideoFilePath);
+
+      return await this.uploadVideoToSupabase(watermarkFilePath);
+    } catch (error) {
+      console.error("Error");
+    }
+  };
 }

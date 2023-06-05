@@ -12,13 +12,9 @@ app.use(compression());
 // Routes to be defined
 
 app.get("/", (req, res) => {
-  console.log("hello")
-  res.send("Hello, World! Its working");
+  res.send("Its working!");
 });
 
 app.use("/video", uploadRoutes);
-// app.use("/conversion", conversionRoutes);
-
-// app.use();
 
 export { app };
