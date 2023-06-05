@@ -15,13 +15,8 @@ export const uploadVideoToSupabase = async (file) => {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
   try {
-    // const convertedFile = file;
-    // console.log("service file beforeconversion", convertedFile);
-    //console.log("service filee path ", file.path);
     const convertedFile = await mp4Conversion(file);
     console.log("converted", convertedFile);
-    // const readStream = fs.createReadStream(convertedFile)
-    // console.log("converted", convertedFile.path);
     const { data, error } = await supabase.storage
       .from("videos")
       .upload(`videos/${convertedFile}`, fs.createReadStream(convertedFile), {
@@ -36,8 +31,6 @@ export const uploadVideoToSupabase = async (file) => {
       return { success: true };
     }
   } catch (error) {
-    // console.log("Error uploading file:", error);
-    // return error.status(500).json({ error: "Failed to upload file" });
     console.error(error);
     throw new Error("custom message");
   }

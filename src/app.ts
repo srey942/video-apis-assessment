@@ -15,7 +15,7 @@ app.get("/", (req, res) => {
   res.send("Hello, World! Its working");
 });
 
-app.use("/upload", uploadRoutes);
+app.use("/video", uploadRoutes);
 // app.use("/conversion", conversionRoutes);
 
 // app.use();
