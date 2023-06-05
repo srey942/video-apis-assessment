@@ -25,23 +25,17 @@ export class VideoService {
       CONSTANTS.DEFAULT_OUTPUT_TYPE
     }`;
     return new Promise((resolve, reject) => {
-      try {
-        ffmpeg()
-          .input(filePath)
-          .input(`${this.assetsBaseUrl}/watermark.png`)
-          .videoCodec(CONSTANTS.DEFAULT_ENCODER)
-          .outputOptions("-pix_fmt yuv420p")
-          .complexFilter([
-            "[0:v]scale=1024:-1[bg];[bg][1:v]overlay=W-w-10:H-h-10",
-          ])
-          .saveToFile(watermarkFilePath)
-          .on("end", () => resolve(watermarkFilePath))
-          .on("error", (error) => reject(error));
-      } catch (e) {
-        reject(e);
-      } finally {
-        cleanUp(filePath);
-      }
+      ffmpeg()
+        .input(filePath)
+        .input(`${this.assetsBaseUrl}/watermark.png`)
+        .videoCodec(CONSTANTS.DEFAULT_ENCODER)
+        .outputOptions("-pix_fmt yuv420p")
+        .complexFilter([
+          "[0:v]scale=1024:-1[bg];[bg][1:v]overlay=W-w-10:H-h-10",
+        ])
+        .saveToFile(watermarkFilePath)
+        .on("end", () => resolve(watermarkFilePath))
+        .on("error", (error) => reject(error));
     });
   };
 
@@ -218,7 +212,7 @@ export class VideoService {
 
       return await this.uploadVideoToSupabase(watermarkFilePath);
     } catch (error) {
-      console.error("Error");
+      console.error("Error merging file", error);
     }
   };
 }
