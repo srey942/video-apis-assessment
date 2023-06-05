@@ -61,8 +61,7 @@ docker run -p 3000:3000 videoapi:latest
 
 - URL: `POST localhost:3000/video`
 - Description: Uploads a video file to Supabase storage.
-- Request body: `file` param Form-data with file field containing the video file.git
-```
+- Request body: `file` param Form-data with file field containing the video file.
 - Response: JSON response indicating the success or failure of the upload.
 - Sample response :
 ```
@@ -80,7 +79,8 @@ docker run -p 3000:3000 videoapi:latest
 
 - URL: `POST: localhost:3000/video/merge`
 - Description: Merge two videos from the supabase.
-- Request body: Request body parameters with two video ids. {viodeoId1:'aaaaadd111',videoId2:'aaqqqq1111'}
+- Request body: Request body parameters with two video ids. {viodeoId1:'aaaaadd111',videoId2:'aaqqqq1111'}.On postman client,please
+  make sure that the  request body type is application/json.
 - Sample request
 ```
 {
@@ -141,7 +141,7 @@ A postman client is used to test the APIs.
 
 * Merge Video API - The merge API can be tested using the following URL : localhost:3000/video/:videoId/metadata
 
-* Download Video API - The download API can be tested using the following URL : localhost:3000/video/merged/:videoId/
+* Download Video API - The download API can be tested using the following URL : localhost:3000/video/merged/:videoId/. On postman client,please make sure that the  request body type is application/json.
   
 ## Limitations
 
