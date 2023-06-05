@@ -145,7 +145,6 @@ A postman client is used to test the APIs.
 ## Limitations
 
 The supabase free account provides storage of maximum of 50Mb.Please refer the screenshot below. Due to the size limit, I was unable to test files sizes above 50MB.
-
-![image](https://github.com/srey942/video-apis-assessment/assets/46189829/dd0ac787-eda5-41f7-9d98-6d04a4e6261d)
+![supabse_storage](https://github.com/srey942/video-apis-assessment/assets/46189829/a08136a7-22c1-45e4-aa52-107185675ff5)
 
 There could be some delay during the merging videos as the conversion using `fluent-ffmpeg` takes longer time.
