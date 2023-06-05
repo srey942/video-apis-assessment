@@ -56,21 +56,57 @@ Note : Please have a minimum version of node v16.16.0, docker installed
 - URL: `POST localhost:3000/video`
 - Description: Uploads a video file to Supabase storage.
 - Request body: `file` param Form-data with file field containing the video file.
+- Sample request body
+```
+{
+"videoId1":"dcfc295467ea4533d78de81339b07beb"
+"videoId2":"dcfc295467ea7833d78de81339b07beb"
+}
+```
 - Response: JSON response indicating the success or failure of the upload.
+- Sample response :
+```
+{
+    "mergeVideoResponse": {
+        "success": true,
+        "data": {
+            "downloadlink": "videos/./merged/dcfc295467ea7833d78de81339b07beb.mp4"
+        }
+    }
+}
+```
 
 ### Video Merge API ###
 
-- URL: `POST localhost:3000/video/merge`
+- URL: `POST: localhost:3000/video/merge`
 - Description: Merge two videos from the supabase.
 - Request body: Request body parameters with two video ids. {viodeoId1:'aaaaadd111',videoId2:'aaqqqq1111'}
 - Response: JSON response indicating the success or failure of the merge.
+- Sample response :
+```
+```
 
 ### Video Metadata API ###
 
-- URL: `GET localhost:3000/video/metadata/:videoId`
+- URL: `GET: localhost:3000/video/:videoId/metadata`
 - Description: Get the metadata of the video on the supabase storage.
-- Request parameters: videoId of the video on supabase
+- Request parameters: videoId of the video on supabase.
 - Response: JSON response of the metadata on sucesss or failure of the fetch.
+- Sample response:
+```
+{
+    "metaDataResponse": {
+        "success": true,
+        "formattedMetadata": {
+            "codecName": "h264",
+            "resolution": "960x540",
+            "duration": 13.346667,
+            "bitRate": 696914,
+            "formatName": "mov,mp4,m4a,3gp,3g2,mj2"
+        }
+    }
+}
+```
 
 ## How to Test the APIs
 
