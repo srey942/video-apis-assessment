@@ -10,11 +10,11 @@ This application is video manipulation service built using Node.js, Express.js, 
 ```
 ├── src
 │   ├── controllers
-|   |   └── videoController.ts
+|   |   └── VideoController.ts
 │   ├── routes
 │   │   └── videos.routes.ts
 │   ├── services
-│   │   ├── videosService.ts
+│   │   ├── VideoService.ts
 │   ├── app.ts
 │   └── server.ts
 ├── converted (the folder from which videos are uploaded to supabase storage)
@@ -41,7 +41,7 @@ Note : Please have a minimum version of node v16.16.0, docker installed
 * Start by cloning the repo :
 * Set and up run docker with following commands to install the required dependencies and setup.
   ``` docker build -t test .``` and 
-  ``` docker run -p 3000:3000 -v .:/usr/src/app test:latest ```
+  ``` docker run -p 3000:3000 -v $(pwd):/usr/src/app test:latest ```
 * Please create a supabase account and create new project. From the project settings->API-> Get your Project URL and Project Key. This key and url needs to be  
   entered in your environment variables.
 * Please a create a storage bucket named `videos` and set it to public.
@@ -67,7 +67,7 @@ Note : Please have a minimum version of node v16.16.0, docker installed
 
 ### Video Metadata API ###
 
-- URL: `GET llocalhost:3000/video/metadata/:videoId`
+- URL: `GET localhost:3000/video/metadata/:videoId`
 - Description: Get the metadata of the video on the supabase storage.
 - Request parameters: videoId of the video on supabase
 - Response: JSON response of the metadata on sucesss or failure of the fetch.
@@ -86,3 +86,8 @@ A postman client is used to test the APIs.
 
 * Download Video API - The download API can be tested using the following URL :
   
+## Limitations
+
+The supabase free account provides storage of maximum of 50Mb. Hence the file can't be larger than 50Mb. Please refer the screenshot below.
+
+![image](https://github.com/srey942/video-apis-assessment/assets/46189829/dd0ac787-eda5-41f7-9d98-6d04a4e6261d)
