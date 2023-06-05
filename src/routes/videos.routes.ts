@@ -1,17 +1,21 @@
 import express from "express";
-import { uploadVideo } from "../controllers/uploadVideoController";
 import multer from "multer";
-import { fetchVideoData } from "../controllers/videoMetadataController";
-const router = express.Router();
-const upload = multer({ dest: "uploads" });
+import { addWaterMark, uploadVideo, fetchVideoData, mergeVideo } from "../controllers/VideoController";
 
-// POST /upload
+const router = express.Router();
+const upload = multer({ dest: "uploads", limits: { fieldSize: parseInt(process.env.MAX_FILE_LIMIT, 10), fileSize: parseInt(process.env.MAX_FILE_LIMIT, 10)} });
+
+//Upload video
 router.post("/", upload.single("file"), uploadVideo);
 
-// router.get("/videos/:videoId", fetchVideoData);
+//Get video metadata
+router.get("/:videoId/metadata", fetchVideoData);
 
-// GET /videos/:videoId
-router.get("/metadata/:videoId", fetchVideoData);
+//Merge video
+router.post("/merge", mergeVideo);
+
+//Add mark video
+router.post("/:videoId/watermark", addWaterMark);
 
 // to define here.
 export default router;
