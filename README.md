@@ -51,8 +51,8 @@ MAX_FILE_LIMIT=5242880
 ```
 * Set up and run docker with following commands:
 ``` 
-docker build -t test .
-docker run -p 3000:3000 -v $(pwd):/usr/src/app test:latest
+docker build -t videoapi .
+docker run -p 3000:3000 videoapi:latest
 ```
 
 ## API Documentation
@@ -98,11 +98,9 @@ docker run -p 3000:3000 -v $(pwd):/usr/src/app test:latest
 - Sample response :
 ```
 {
-    "mergeVideoResponse": {
+    "response": {
         "success": true,
-        "data": {
-            "download_link": "videos/./merged/dcfc295467ea7833d78de81339b07beb.mp4"
-        }
+        "link": "./merged/34r2c647bb84b607b40437c1fc35c4785"
     }
 }
 ```
@@ -129,6 +127,14 @@ docker run -p 3000:3000 -v $(pwd):/usr/src/app test:latest
 }
 ```
 
+### Video Download API ###
+
+- URL: `GET: localhost:3000/video/merged/:videoId/`
+- Description: Gets a downloable link to the merged video
+- Request parameters: videoId of the merged video on supabase.
+- Response: Downloadble video file.
+
+
 ## How to Test the APIs
 
 A postman client is used to test the APIs.
@@ -136,15 +142,17 @@ A postman client is used to test the APIs.
 * Upload APIs- The upload API can be tested by using the following URL : `localhost:3000/video`. On the body, select `form-data`,on the key give the parameter    
   name as `file` and in `value`, select a video file and send the request.
 
-* Video metadata API - The upload API can be tested by using the following URL : `localhost:3000/video/metadata/:videoId`. The videoId should be on the URL as a 
+* Video metadata API - The upload API can be tested by using the following URL : `localhost:3000/video/:videoId/metadata`. The videoId should be on the URL as a 
   parameter. The `videoId` can be found on the supabase storage. The videoId is nothing but the unique name of the video that is stored in the supabase.
 
-* Merge Video API - The merge API can be tested using the following URL :
+* Merge Video API - The merge API can be tested using the following URL : localhost:3000/video/:videoId/metadata
 
-* Download Video API - The download API can be tested using the following URL :
+* Download Video API - The download API can be tested using the following URL : localhost:3000/video/merged/:videoId/
   
 ## Limitations
 
-The supabase free account provides storage of maximum of 50Mb. Hence the file can't be larger than 50Mb. Please refer the screenshot below.
+The supabase free account provides storage of maximum of 50Mb.Please refer the screenshot below. Due to the size limit, I was unable to test files sizes above 50MB.
 
 ![image](https://github.com/srey942/video-apis-assessment/assets/46189829/dd0ac787-eda5-41f7-9d98-6d04a4e6261d)
+
+There could be some delay during the merging videos as the conversion using `fluent-ffmpeg` takes longer time.
